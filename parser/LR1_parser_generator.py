@@ -25,12 +25,18 @@ class ShiftReduceParser:
         cursor = 0
         output = []
         operations = []
+        actions = self.action.keys()
         
         while True:
             state = stack[-1]
             lookahead = w[cursor]
             if self.verbose: print(stack, '<---||--->', w[cursor:])
-                
+
+            for e in actions:
+                if state == e[0] and lookahead.Name == e[1].Name:
+                    lookahead = e[1]
+                    break
+              
             if (state, lookahead) not in self.action:
                 return None
             
