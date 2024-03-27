@@ -153,20 +153,6 @@ class IntType(Type):
     def __eq__(self, other):
         return other.name == self.name or isinstance(other, IntType)
 
-class StringType(Type):
-    def __init__(self, name: str):
-        Type.__init__(name)
-    
-    def __eq__(self, other):
-        return other.name == self.name or isinstance(other, IntType)
-    
-class BoolType(Type):
-    def __init__(self, name: str):
-        Type.__init__(name)
-    
-    def __eq__(self, other):
-        return other.name == self.name or isinstance(other, IntType)
-
 class Context:
     def __init__(self):
         self.types = {}
