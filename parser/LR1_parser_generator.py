@@ -33,9 +33,13 @@ class ShiftReduceParser:
             if self.verbose: print(stack, '<---||--->', w[cursor:])
 
             for e in actions:
-                if state == e[0] and lookahead.Name == e[1].Name:
-                    lookahead = e[1]
-                    break
+                try:
+                    if state == e[0] and lookahead.Name == e[1].Name:                        
+                        lookahead = e[1]
+                        break
+                except:
+                    print(e)
+                    
               
             if (state, lookahead) not in self.action:
                 return None

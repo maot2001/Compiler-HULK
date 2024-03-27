@@ -1,6 +1,7 @@
 from cmp.pycompiler import Grammar
 from parser.LR1_parser_generator import LR1Parser
 from lexer.lexer_generator import Lexer
+from semantic_checker.ast import *
 
 
 
@@ -13,7 +14,7 @@ ExprBlock, StatList, ExprList, ExprTail, AssignList, VarDecl, ElifBranch = H.Non
 FuncDecl, Body, ArgList, ArgTail, TypeDecl, FeatureList = H.NonTerminals('FuncDecl Body ArgList ArgTail TypeDecl FeatureList')
 ProtDecl, ProtMethods, FullyTypedArgs, FullyTypedTail, TypeList = H.NonTerminals('ProtDecl ProtMethods FullyTypedArgs FullyTypedTail TypeList')
 
-num, str, bool, id, type_id = H.Terminals('num str bool id type_id')
+num, str, bool, const, id, type_id = H.Terminals('num str bool const id type_id')
 leT, iN, iF, eliF, elsE, whilE, foR, aS, iS, neW = H.Terminals('let in if elif else while for as is new')
 function, type, inherits, protocol, extends = H.Terminals('function type inherits protocol extends')
 plus, minus, star, div, mod, pow, starstar = H.Terminals('+ - * / % ^ **')
@@ -26,160 +27,164 @@ opar, cpar, obrack, cbrack, obrace, cbrace = H.Terminals('( ) [ ] { }')
 
 
 
-Program %= DeclList + Stat
+Program %= DeclList + Stat, lambda h,s: ProgramNode(s[1],s[2])
 
-DeclList %= Decl + DeclList
-DeclList %= H.Epsilon
+DeclList %= Decl + DeclList, lambda h,s: [s[1]] + s[2]
+DeclList %= H.Epsilon, lambda h,s: []
 
-Decl %= function + FuncDecl
-Decl %= type + TypeDecl
-Decl %= protocol + ProtDecl
-
-
-
-Stat %= SimpleExpr + semi
-Stat %= ExprBlock
-Stat %= ExprBlock + semi
-
-Expr %= SimpleExpr
-Expr %= ExprBlock
-
-SimpleExpr %= leT + AssignList + iN + SimpleExpr
-SimpleExpr %= iF + opar + Expr + cpar + Expr + ElifBranch + elsE + SimpleExpr
-SimpleExpr %= whilE + opar + Expr + cpar + SimpleExpr
-SimpleExpr %= foR + opar + id + iN + Expr + cpar + SimpleExpr
-SimpleExpr %= id + coloneq + SimpleExpr
-SimpleExpr %= id + dot + id + coloneq + SimpleExpr
-SimpleExpr %= ArithExpr
+Decl %= FuncDecl, lambda h,s: s[1]
+Decl %= TypeDecl, lambda h,s: s[1]
+Decl %= ProtDecl, lambda h,s: s[1]
 
 
 
-ArithExpr %= Disj
-ArithExpr %= ArithExpr + at + Disj
-ArithExpr %= ArithExpr + atat + Disj
+Stat %= SimpleExpr + semi, lambda h,s: s[1]
+Stat %= ExprBlock, lambda h,s: s[1]
+Stat %= ExprBlock + semi, lambda h,s: s[1]
 
-Disj %= Conj
-Disj %= Disj + oR + Conj
+Expr %= SimpleExpr, lambda h,s: s[1]
+Expr %= ExprBlock, lambda h,s: s[1]
 
-Conj %= Neg
-Conj %= Conj + anD + Neg
-
-Neg %= DynTest
-Neg %= noT + DynTest
-
-DynTest %= Comp
-DynTest %= Comp + iS + type_id
-
-Comp %= NumExpr
-Comp %= NumExpr + eqeq + NumExpr
-Comp %= NumExpr + noteq + NumExpr
-Comp %= NumExpr + less + NumExpr
-Comp %= NumExpr + greater + NumExpr
-Comp %= NumExpr + leq + NumExpr
-Comp %= NumExpr + geq + NumExpr
-
-NumExpr %= Term
-NumExpr %= NumExpr + plus + Term
-NumExpr %= NumExpr + minus + Term
-
-Term %= Factor
-Term %= Term + star + Factor
-Term %= Term + div + Factor
-Term %= Term + mod + Factor
-
-Factor %= Sign
-Factor %= Sign + pow + Factor
-Factor %= Sign + starstar + Factor
-
-Sign %= Atom
-Sign %= minus + Atom
-
-Atom %= num
-Atom %= str
-Atom %= bool
-Atom %= id
-Atom %= obrack + ExprList + cbrack
-Atom %= obrack + Expr + oror + id + iN + Expr + cbrack
-Atom %= opar + Expr + cpar
-Atom %= neW + type_id + opar + ExprList + cpar
-Atom %= id + opar + ExprList + cpar
-Atom %= Atom + aS + type_id
-Atom %= Atom + obrack + Expr + cbrack
-Atom %= id + dot + id + opar + ExprList + cpar
-Atom %= id + dot + id
+SimpleExpr %= leT + AssignList + iN + SimpleExpr, lambda h,s: LetNode(s[2],s[4])
+SimpleExpr %= iF + opar + Expr + cpar + Expr + ElifBranch + elsE + SimpleExpr, lambda h,s: IfNode(s[3],s[5],s[6],s[8])
+SimpleExpr %= whilE + opar + Expr + cpar + SimpleExpr, lambda h,s: WhileNode(s[3],s[5])
+SimpleExpr %= foR + opar + id + iN + Expr + cpar + SimpleExpr, lambda h,s: ForNode(s[3],s[5],s[7])
+SimpleExpr %= id + coloneq + SimpleExpr, lambda h,s: DestrAssign(s[1],s[3])
+SimpleExpr %= id + dot + id + coloneq + SimpleExpr, lambda h,s: DestrAssign(s[3],s[5],True)
+SimpleExpr %= ArithExpr, lambda h,s: s[1]
 
 
 
-ExprBlock %= obrace + StatList + cbrace
-ExprBlock %= leT + AssignList + iN + ExprBlock
-ExprBlock %= iF + opar + Expr + cpar + Expr + ElifBranch + elsE + ExprBlock
-ExprBlock %= whilE + opar + Expr + cpar + ExprBlock
-ExprBlock %= foR + opar + id + iN + Expr + cpar + ExprBlock
-ExprBlock %= id + coloneq + ExprBlock
-ExprBlock %= id + dot + id + coloneq + ExprBlock
+ExprBlock %= obrace + StatList + cbrace, lambda h,s: ExprBlockNode(s[2])
+ExprBlock %= leT + AssignList + iN + ExprBlock, lambda h,s: LetNode(s[2],s[4])
+ExprBlock %= iF + opar + Expr + cpar + Expr + ElifBranch + elsE + ExprBlock, lambda h,s: IfNode(s[3],s[5],s[6],s[8])
+ExprBlock %= whilE + opar + Expr + cpar + ExprBlock, lambda h,s: WhileNode(s[3],s[5])
+ExprBlock %= foR + opar + id + iN + Expr + cpar + ExprBlock, lambda h,s: ForNode(s[3],s[5],s[7])
+ExprBlock %= id + coloneq + ExprBlock, lambda h,s: DestrAssign(s[1],s[3])
+ExprBlock %= id + dot + id + coloneq + ExprBlock, lambda h,s: DestrAssign(s[3],s[5],True)
 
-StatList %= Stat
-StatList %= Stat + StatList
+StatList %= Stat, lambda h,s: [s[1]]
+StatList %= Stat + StatList, lambda h,s: [s[1]] + s[2]
 
-ExprList %= Expr + ExprTail
-ExprList %= H.Epsilon
+ExprList %= Expr + ExprTail, lambda h,s: [s[1]] + s[2]
+ExprList %= H.Epsilon, lambda h,s: []
 
-ExprTail %= comma + Expr + ExprTail
-ExprTail %= H.Epsilon
+ExprTail %= comma + Expr + ExprTail, lambda h,s: [s[2]] + s[3]
+ExprTail %= H.Epsilon, lambda h,s: []
 
-AssignList %= VarDecl + eq + Expr
-AssignList %= VarDecl + eq + Expr + comma + AssignList
+AssignList %= VarDecl + eq + Expr, lambda h,s: [AssignNode(s[1],s[3])]
+AssignList %= VarDecl + eq + Expr + comma + AssignList, lambda h,s: [AssignNode(s[1],s[3])] + []
 
-VarDecl %= id
-VarDecl %= id + colon + type_id
+VarDecl %= id, lambda h,s: VarDefNode(s[1])
+VarDecl %= id + colon + type_id, lambda h,s: VarDefNode(s[1],s[3])
 
-ElifBranch %= eliF + opar + Expr + cpar + Expr + ElifBranch
-ElifBranch %= H.Epsilon
+ElifBranch %= eliF + opar + Expr + cpar + Expr + ElifBranch, lambda h,s: [(s[3],s[5])] + s[6]
+ElifBranch %= H.Epsilon, lambda h,s: []
 
 
 
 
-FuncDecl %= id + opar + ArgList + cpar + Body
-FuncDecl %= id + opar + ArgList + cpar + colon + type_id + Body
+ArithExpr %= Disj, lambda h,s: s[1]
+ArithExpr %= ArithExpr + at + Disj, lambda h,s: ConcatNode(s[1],s[3])
+ArithExpr %= ArithExpr + atat + Disj, lambda h,s: ConcatWithSpaceNode(s[1],s[3])
 
-Body %= arrow + Stat
-Body %= obrace + StatList + cbrace
+Disj %= Conj, lambda h,s: s[1]
+Disj %= Disj + oR + Conj, lambda h,s: OrNode(s[1],s[3])
 
-ArgList %= VarDecl + ArgTail
-ArgList %= H.Epsilon
+Conj %= Neg, lambda h,s: s[1]
+Conj %= Conj + anD + Neg, lambda h,s: AndNode(s[1],s[3])
 
-ArgTail %= comma + VarDecl + ArgTail
-ArgTail %= H.Epsilon
+Neg %= DynTest, lambda h,s: s[1]
+Neg %= noT + DynTest, lambda h,s: NotNode(s[2])
+
+DynTest %= Comp, lambda h,s: s[1]
+DynTest %= Comp + iS + type_id, lambda h,s: DynTestNode(s[1],s[3])
+
+Comp %= NumExpr, lambda h,s: s[1]
+Comp %= NumExpr + eqeq + NumExpr, lambda h,s: EqualNode(s[1],s[3])
+Comp %= NumExpr + noteq + NumExpr, lambda h,s: NotEqualNode(s[1],s[3])
+Comp %= NumExpr + less + NumExpr, lambda h,s: LessNode(s[1],s[3])
+Comp %= NumExpr + greater + NumExpr, lambda h,s: GreaterNode(s[1],s[3])
+Comp %= NumExpr + leq + NumExpr, lambda h,s: LeqNode(s[1],s[3])
+Comp %= NumExpr + geq + NumExpr, lambda h,s: GeqNode(s[1],s[3])
+
+NumExpr %= Term, lambda h,s: s[1]
+NumExpr %= NumExpr + plus + Term, lambda h,s: PlusNode(s[1],s[3])
+NumExpr %= NumExpr + minus + Term, lambda h,s: MinusNode(s[1],s[3])
+
+Term %= Factor, lambda h,s: s[1]
+Term %= Term + star + Factor, lambda h,s: StarNode(s[1],s[3])
+Term %= Term + div + Factor, lambda h,s: DivNode(s[1],s[3])
+Term %= Term + mod + Factor, lambda h,s: ModNode(s[1],s[3])
+
+Factor %= Sign, lambda h,s: s[1]
+Factor %= Sign + pow + Factor, lambda h,s: PowNode(s[1],s[3])
+Factor %= Sign + starstar + Factor, lambda h,s: PowNode(s[1],s[3])
+
+Sign %= Atom, lambda h,s: s[1]
+Sign %= minus + Atom, lambda h,s: NegativeNode(s[2])
+
+Atom %= num, lambda h,s: LiteralNumNode(s[1])
+Atom %= str, lambda h,s: LiteralStrNode(s[1])
+Atom %= bool, lambda h,s: LiteralBoolNode(s[1])
+Atom %= const, lambda h,s: ConstantNode(s[1])
+Atom %= id, lambda h,s: VarNode(s[1])
+Atom %= obrack + ExprList + cbrack, lambda h,s: VectorNode(s[2])
+Atom %= obrack + Expr + oror + id + iN + Expr + cbrack, lambda h,s: ImplicitVector(s[2],s[4],s[6])
+Atom %= opar + Expr + cpar, lambda h,s: s[1]
+Atom %= neW + type_id + opar + ExprList + cpar, lambda h,s: InstantiateNode(s[2],s[4])
+Atom %= id + opar + ExprList + cpar, lambda h,s: FuncCallNode(s[1],s[3])
+Atom %= Atom + aS + type_id, lambda h,s: DowncastNode(s[1],s[3])
+Atom %= Atom + obrack + Expr + cbrack, lambda h,s: IndexingNode(s[1],s[3])
+Atom %= id + dot + id + opar + ExprList + cpar, lambda h,s: MethodCallNode(s[1],s[3],s[5])
+Atom %= id + dot + id, lambda h,s: AttrrCallNode(s[1],s[3])
 
 
 
 
-TypeDecl %= type_id + obrace + FeatureList + cbrace
-TypeDecl %= type_id + opar + ArgList + cpar + obrace + FeatureList + cbrace
-TypeDecl %= type_id + inherits + type_id + obrace + FeatureList + cbrace
-TypeDecl %= type_id + opar + ArgList + cpar + inherits + type_id + opar + ExprList + cpar + obrace + FeatureList + cbrace
 
-FeatureList %= VarDecl + eq + Stat + FeatureList
-FeatureList %= FuncDecl + FeatureList
-FeatureList %= H.Epsilon
+FuncDecl %= function + id + opar + ArgList + cpar + Body, lambda h,s: FuncDeclNode(s[2], s[4], s[6])
+FuncDecl %= function + id + opar + ArgList + cpar + colon + type_id + Body, lambda h,s: FuncDeclNode(s[2],s[4],s[8],s[7])
+
+Body %= arrow + Stat, lambda h,s: s[2]
+Body %= obrace + StatList + cbrace, lambda h,s: s[2]
+
+ArgList %= VarDecl + ArgTail, lambda h,s: [s[1]] + s[2]
+ArgList %= H.Epsilon, lambda h,s: []
+
+ArgTail %= comma + VarDecl + ArgTail, lambda h,s: [s[2]] + s[3]
+ArgTail %= H.Epsilon, lambda h,s: []
 
 
 
 
-ProtDecl %= type_id + obrace + ProtMethods + cbrace
-ProtDecl %= type_id + extends + TypeList + obrace + ProtMethods + cbrace
+TypeDecl %= type + type_id + obrace + FeatureList + cbrace, lambda h,s: TypeDeclNode(s[2],s[4])
+TypeDecl %= type + type_id + opar + ArgList + cpar + obrace + FeatureList + cbrace, lambda h,s: TypeDeclNode(s[2],s[7],s[4])
+TypeDecl %= type + type_id + inherits + type_id + obrace + FeatureList + cbrace, lambda h,s: TypeDeclNode(s[2],s[6],None,s[4])
+TypeDecl %= type + type_id + opar + ArgList + cpar + inherits + type_id + opar + ExprList + cpar + obrace + FeatureList + cbrace, lambda h,s: TypeDeclNode(s[2],s[12],s[4],s[7],s[9])
 
-ProtMethods %= id + opar + FullyTypedArgs + cpar + colon + type_id + semi + ProtMethods
-ProtMethods %= H.Epsilon
+FeatureList %= VarDecl + eq + Stat + FeatureList, lambda h,s: [AssignNode(s[1],s[3])] + s[4]
+FeatureList %= id + opar + ArgList + cpar + Body + FeatureList, lambda h,s: [MethodNode(s[1],s[3],s[5])] + s[6]
+FeatureList %= id + opar + ArgList + cpar + colon + type_id + Body + FeatureList, lambda h,s: [MethodNode(s[1],s[3],s[7],s[6])] + s[8]
+FeatureList %= H.Epsilon, lambda h,s: []
 
-FullyTypedArgs %= id + colon + type_id + FullyTypedTail
-FullyTypedArgs %= H.Epsilon
 
-FullyTypedTail %= comma + id + colon + type_id + FullyTypedTail
-FullyTypedTail %= H.Epsilon
 
-TypeList %= type_id
-TypeList %= type_id + comma + TypeList
+
+ProtDecl %= protocol + type_id + obrace + ProtMethods + cbrace, lambda h,s: ProtDeclNode(s[2],s[4])
+ProtDecl %= protocol + type_id + extends +  TypeList + obrace + ProtMethods + cbrace, lambda h,s: ProtDeclNode(s[2],s[6],s[4])
+
+ProtMethods %= id + opar + FullyTypedArgs + cpar + colon + type_id + semi + ProtMethods, lambda h,s: [ProtMethodNode(s[1],s[3],s[6])] + s[8]
+ProtMethods %= H.Epsilon, lambda h,s: []
+
+FullyTypedArgs %= id + colon + type_id + FullyTypedTail, lambda h,s: [VarDefNode(s[1],s[3])] + s[4]
+FullyTypedArgs %= H.Epsilon, lambda h,s: []
+
+FullyTypedTail %= comma + id + colon + type_id + FullyTypedTail, lambda h,s: [VarDefNode(s[2],s[4])] + s[5] 
+FullyTypedTail %= H.Epsilon, lambda h,s: []
+
+TypeList %= type_id, lambda h,s: [ s[1] ]
+TypeList %= type_id + comma + TypeList, lambda h,s: [ s[1] ] + s[3]
 
 
 
@@ -194,7 +199,8 @@ class HulkParser(LR1Parser):
 
 table = [ (str, '"([\x00-!#-\x7f]|\\\\")*"'),
           (num, '(0|[1-9][0-9]*)(.[0-9]+)?'),
-          (bool, 'true|false')               ]
+          (bool, 'true|false'),          
+          (const, 'PI|E')]
 
 table.extend((H[lex], lex) for lex in 'let in if elif else while for as is new'.split())
 table.extend((H[lex], lex) for lex in 'function type inherits protocol extends'.split())

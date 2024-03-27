@@ -1,0 +1,21 @@
+type Bird {
+    
+}
+
+type Plane {
+    
+}
+
+type Superman {
+    
+}
+
+function cot(x) => 1 / tan(x);
+function tan(x) => sin(x) / cos(x);
+
+let x = new Superman() in {
+    print(
+        if (x is Bird) "It's bird!"
+        elif (x is Plane) "It's a plane!"
+        else "No, it's Superman!"
+    ); print(tan(PI) ** 2 + cot(PI) ** 2); }
