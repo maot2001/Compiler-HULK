@@ -1,6 +1,7 @@
 from HULK_lexer_parser import HulkParser, HulkLexer
 from cmp.evaluation import evaluate_reverse_parse
 from semantic_checker.type_checker import TypeCollector
+from code_gen.hulk_to_Cplus import hulk_to_Cplus
 import sys
 import dill
 import os
@@ -29,6 +30,10 @@ def load_src():
 
         return lexer, parser
 
+def run_cpp(text):
+    with open("temp.cpp", "w") as file:
+        file.write(text)
+
 # def exec_file():
 #     lexer, parser = load_src()
 #     with open(sys.argv[1]) as opened_file:
@@ -55,8 +60,9 @@ collector.visit(ast)
 
 context = collector.context
 print(context)
-
-
+text = hulk_to_Cplus(ast)
+print(text)
+run_cpp(text)
 
 
 
