@@ -1,22 +1,26 @@
 from cmp.semantic import Type,Context,SemanticError,Method
 
+class NoneType(Type):
+    def __init__(self):
+        Type.__init__(self, 'None')
+
 class NumType(Type):
     def __init__(self):
-        Type.__init__(self, 'numerical')
+        Type.__init__(self, 'Numerical')
 
     def __eq__(self, other):
         return other.name == self.name or isinstance(other, NumType)
 
 class StringType(Type):
     def __init__(self):
-        Type.__init__(self,'string')
+        Type.__init__(self,'String')
 
     def __eq__(self, other):
         return other.name == self.name or isinstance(other, StringType)
 
 class BoolType(Type):
     def __init__(self):
-        Type.__init__(self,'bool')
+        Type.__init__(self,'Bool')
 
     def __eq__(self, other):
         return other.name == self.name or isinstance(other, BoolType)
@@ -92,7 +96,6 @@ class Hulk_Context(Context):
     def __init__(self):
         Context.__init__(self)
         self.func = {}
-        self.prot = {}
 
     def create_func(self, name, params, params_type, return_type):
         if name in self.func:
@@ -107,20 +110,14 @@ class Hulk_Context(Context):
             raise SemanticError(f'Type "{name}" is not defined.')
         
     def create_protocol(self,name,parents):
-        if name in self.prot:
+        if name in self.types:
             raise SemanticError(f'Type with the same name ({name}) already in context.')
-        typex = self.prot[name] = Protocol(name,parents)
+        typex = self.types[name] = Protocol(name,parents)
         return typex
-    
-    def get_prot(self, name:str):
-        try:
-            return self.prot[name]
-        except KeyError:
-            raise SemanticError(f'Type "{name}" is not defined.')
+
         
     def __str__(self):
         types_str='Types: {\n\t' + '\n\t'.join(y for x in self.types.values() for y in str(x).split('\n')) + '\n}'
         func_str='Funcs: {\n\t' + '\n\t'.join(y for x in self.func.values() for y in str(x).split('\n')) + '\n}'
-        prot_str='Protocols: {\n\t' + '\n\t'.join(y for x in self.prot.values() for y in str(x).split('\n')) + '\n}'
-        return types_str+'\n'+func_str+'\n'+prot_str
+        return types_str+'\n'+func_str
     

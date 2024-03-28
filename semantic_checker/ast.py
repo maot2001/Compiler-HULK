@@ -167,13 +167,19 @@ class NegativeNode(UnaryNode):
 
 
 class LiteralNumNode(AtomicNode):
-    pass
+    def __init__(self, lex):
+        AtomicNode.__init__(self,lex)
+        self.type='Num'
 
 class LiteralBoolNode(AtomicNode):
-    pass
+    def __init__(self, lex):
+        AtomicNode.__init__(self,lex)
+        self.type='Bool'
 
 class LiteralStrNode(AtomicNode):
-    pass
+    def __init__(self, lex):
+        AtomicNode.__init__(self,lex)
+        self.type='Str'
 
 class ConstantNode(AtomicNode):
     pass
@@ -195,6 +201,9 @@ class IndexingNode(ExprNode):
     def __init__(self, vector, index):
         self.vector = vector
         self.expr = index
+
+
+
 
 class InstantiateNode(ExprNode):
     def __init__(self, type, expr_list) -> None:
@@ -251,13 +260,13 @@ class MethodNode(Node):
               
 
 class ProtDeclNode(DeclNode):
-    def __init__(self, id, methods, parents) -> None:
+    def __init__(self, id, methods, parents=None) -> None:
         self.id = id
         self.methods = methods
         self.parents = parents
 
 class ProtMethodNode(Node):
-    def __init__(self, id, return_type, args: list[VarDefNode]) -> None:
+    def __init__(self, id, args: list[VarDefNode], return_type) -> None:
         self.id = id
         self.args = args
         self.return_type = return_type
