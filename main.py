@@ -1,5 +1,6 @@
 from HULK_lexer_parser import HulkParser, HulkLexer
 from cmp.evaluation import evaluate_reverse_parse
+from semantic_checker.type_checker import TypeCollector
 import sys
 import dill
 import os
@@ -28,20 +29,34 @@ def load_src():
 
         return lexer, parser
 
-def exec_file():
-    lexer, parser = load_src()
-    with open(sys.argv[1]) as opened_file:
-        text = opened_file.read()
-    tokens = lexer(text)
-    parse, operations = parser([token.token_type for token in tokens], True)
-    ast = evaluate_reverse_parse(parse,operations,tokens)
-    print(parse is not None)
+# def exec_file():
+#     lexer, parser = load_src()
+#     with open(sys.argv[1]) as opened_file:
+#         text = opened_file.read()
+#     tokens = lexer(text)
+#     parse, operations = parser([token.token_type for token in tokens], True)
+#     ast = evaluate_reverse_parse(parse,operations,tokens)
+#     print(parse is not None)
 
-if __name__ == "__main__":
-    if len(sys.argv) != 1:
-        exec_file()
-    else:
-        print("Must provide a file to compile and run.")
+# if __name__ == "__main__":
+#     if len(sys.argv) != 1:
+#         exec_file()
+#     else:
+#         print("Must provide a file to compile and run.")
+
+lexer, parser = load_src()
+text = ''' type A { }  type B { }  a ; '''
+tokens = lexer(text)
+parse, operations = parser([token.token_type for token in tokens], True)
+ast = evaluate_reverse_parse(parse,operations,tokens)
+errors = []
+collector = TypeCollector(errors)
+collector.visit(ast)
+
+context = collector.context
+print(context)
+
+
 
 
 

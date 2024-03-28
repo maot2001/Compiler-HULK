@@ -257,7 +257,7 @@ class ProtDeclNode(DeclNode):
         self.parents = parents
 
 class ProtMethodNode(Node):
-    def __init__(self, id, return_type, args: list[VarDefNode]) -> None:
+    def __init__(self, id, args: list[VarDefNode], return_type) -> None:
         self.id = id
         self.args = args
         self.return_type = return_type
