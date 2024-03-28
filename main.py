@@ -31,8 +31,15 @@ def load_src():
         return lexer, parser
 
 def run_cpp(text):
-    with open("temp.cpp", "w") as file:
+    with open('temp.cpp', 'w') as file:
         file.write(text)
+
+    compilation = subprocess.Popen(["g++", "temp.cpp", "-o", "temp"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout, stderr = compilation.communicate()
+
+    execution = subprocess.Popen("temp", stdout=subprocess.PIPE)
+    output, _ = execution.communicate()
+    print(output.decode())
 
 # def exec_file():
 #     lexer, parser = load_src()
